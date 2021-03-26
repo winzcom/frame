@@ -12,13 +12,17 @@ const handle = (req, res, router) => {
     console.log({ url, })
 
     const route_found = router.findPattern(url.split('/').length, url);
-
-    console.log({ route_found })
-
+    if(!route_found) {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        return res.end('Not found')
+    }
     req.parameter = route_found.paramter;
 
     if(route_found.method.toLowerCase() != req.method.toLowerCase()) {
-        throw new Error('No Method for the route ', url);
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({
+            error: 'Wrong Method Http method for route '+ url
+        }))
     }
 
     const { controllers } = route_found;

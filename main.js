@@ -9,12 +9,18 @@ const server = http.Server(core(router));
 
 let string = '/resolve/:jk/kl/jk/:as'
 
-let login = '/login/:name';
+let login = '/login/:wale';
 
-router.post(login, (req, res) => {
-    console.log('i am login in ', req.parameter.name);
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('okay');
+router.post('/login/:bvn/gt/:run', (req, res, next) => {
+    console.log('i am login in ', req.parameter);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+        message:'I am there with you love',
+        data: {
+            name: req.parameter.bvn,
+            run: Boolean(req.parameter.run)
+        }
+    }));
 })
 
 router.get(string, () => {
@@ -31,7 +37,7 @@ router.get(string, () => {
 }, () => {})
 
 
-let pat = router.findPattern(login.split('/').length, login);
+//let pat = router.findPattern(login.split('/').length, login);
 
 server.listen('9808', () => {
     console.log('start listening')

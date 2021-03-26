@@ -99,7 +99,7 @@ Router.prototype.findPattern = function(len, path) {
             }
         }
     }
-    throw new Error(`No route found for ${path}`);
+    return;
 }
 
 module.exports = Router
