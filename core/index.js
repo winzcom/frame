@@ -1,15 +1,21 @@
 const Router = require('../route');
 
-const router = new Router();
-
-const core = function(req, res) {
-    handle(req, res);
+const core = function(router) {
+    return function(req, res) {
+        handle(req, res, router);
+    }
 }
 
-const handle = (req, res) => {
+const handle = (req, res, router) => {
     const url = req.url;
 
-    const route_found = router.findPattern(url);
+    console.log({ url, })
+
+    const route_found = router.findPattern(url.split('/').length, url);
+
+    console.log({ route_found })
+
+    req.parameter = route_found.paramter;
 
     if(route_found.method.toLowerCase() != req.method.toLowerCase()) {
         throw new Error('No Method for the route ', url);
