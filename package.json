@@ -1,0 +1,25 @@
+{
+  "name": "framework",
+  "version": "1.0.0",
+  "description": "Framework for node js",
+  "main": "main.js",
+  "scripts": {
+    "test": "mocha",
+    "start": "node ./main.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/winzcom/frame.git"
+  },
+  "author": "Ebun",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/winzcom/frame/issues"
+  },
+  "homepage": "https://github.com/winzcom/frame#readme",
+  "devDependencies": {
+    "chai": "^4.3.4",
+    "mocha": "^8.3.2",
+    "supertest": "^6.1.3"
+  }
+}

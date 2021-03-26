@@ -7,38 +7,18 @@ const router = new Route();
 
 const server = http.Server(core(router));
 
-let string = '/resolve/:jk/kl/jk/:as'
-
-let login = '/login/:wale';
-
 router.post('/login/:bvn/gt/:run', (req, res, next) => {
-    console.log('i am login in ', req.parameter);
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({
+    const { bvn, run } = req.parameter;
+    const { body } = req;
+    res.json({
         message:'I am there with you love',
         data: {
-            name: req.parameter.bvn,
-            run: Boolean(req.parameter.run)
+            name: bvn,
+            run: Boolean(run),
+            body
         }
-    }));
+    })
 })
-
-router.get(string, () => {
-    console.log('help')
-}, () => {})
-
-//string = '/resolve/jk/kl/jk'
-
-
-string = '/resolve/jk/klsd/jk/kl'
-
-router.get(string, () => {
-    console.log('help')
-}, () => {})
-
-
-//let pat = router.findPattern(login.split('/').length, login);
-
-server.listen('9808', () => {
-    console.log('start listening')
+server.listen('9080', () => {
+    console.log('start listening');
 })

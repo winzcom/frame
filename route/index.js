@@ -1,25 +1,23 @@
+let instance;
 const Router = function() {
      this.methodPaths = {}
 }
 Router.prototype.get = function (path, ...controllers)  {
     const len = this.getParams(path, controllers, 'get');
-    // this.methodPaths[len].paths = {
-    //     [path]: {
-    //         method: 'get',
-    //         controllers,
-    //     }
-    // }
 }
 Router.prototype.post = function (path, ...controllers)  {
     const len = this.getParams(path, controllers, 'post');
-    // this.methodPaths[len].paths = {
-    //     [path]: {
-    //         method: 'get',
-    //         controllers,
-    //     }
-    // }
 }
-Router.prototype.regexPath = (path) => {
+Router.prototype.put = function (path, ...controllers)  {
+    const len = this.getParams(path, controllers, 'put');
+}
+Router.prototype.patch = function (path, ...controllers)  {
+    const len = this.getParams(path, controllers, 'patch');
+}
+Router.prototype.delete = function (path, ...controllers)  {
+    const len = this.getParams(path, controllers, 'delete');
+}
+Router.regexPath = (path) => {
     if(!path) {
         throw new Error('Please provide a route')
     }
@@ -33,7 +31,7 @@ Router.prototype.regexPath = (path) => {
 }
 
 Router.prototype.getParams = function (path, controllers, method) {
-    const paths = this.regexPath(path);
+    const paths = Router.regexPath(path);
     const first = paths[0];
     let splits = first.split('/')
     let len = splits.length;
@@ -67,20 +65,15 @@ Router.prototype.getParams = function (path, controllers, method) {
 }
 
 Router.prototype.findPattern = function(len, path) {
-    //this.regexPath(path);
     const path_split = path.split('/').splice(1);
-    //console.log({ path_split });
     const exists = this.methodPaths[len];
-    //console.log({ len, exists })
     if(exists) {
         const { path: all_paths, paths } = exists;
         for(let i = 0; i < all_paths.length; i += 1) {
             let it = all_paths[i];
             let set = paths[it];
             set.paramter = {}
-            //console.log({ set: all_paths, path })
             if(all_paths[i] == path) { 
-                // call handle to run controllers
                 return set
             } else {
                 const { param_length, params, param_position, splited } = set;
@@ -93,7 +86,6 @@ Router.prototype.findPattern = function(len, path) {
                     }
                 }
                 if(setdone == splited.length - params.length) {
-                    // call handle
                     return set;
                 }
             }
