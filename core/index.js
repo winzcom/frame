@@ -9,7 +9,8 @@ const core = function(router) {
 
 const handle = async (req, res, router) => {
     const url = req.url;
-    const route_found = router.findPattern(url.split('/').length, url);
+    const method = req.method.toLowerCase();
+    const route_found = router.findPattern(url.split('/').length, url, method);
 
     util.extend(extendResponse(), res);
 
@@ -20,8 +21,6 @@ const handle = async (req, res, router) => {
     const readers = ['post', 'patch', 'put', 'patch']
     const content_type = req.headers['content-type']
     req.parameter = route_found.paramter;
-
-    const method = req.method.toLowerCase();
     
     if(route_found.method.toLowerCase() != method) {
         res.statusCode = 400;

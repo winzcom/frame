@@ -37,8 +37,8 @@ Router.prototype.getParams = function (path, controllers, method) {
     let len = splits.length;
     const params = []
     const param_position = {}
-    if(!this.methodPaths[len]) {
-        this.methodPaths[len] = {
+    if(!this.methodPaths[`${len}_${method}`]) {
+        this.methodPaths[`${len}_${method}`] = {
             length: len,
             path: [],
         }
@@ -50,23 +50,23 @@ Router.prototype.getParams = function (path, controllers, method) {
                 params.push(splits[i].replace(':', ''));
             }
         }
-        this.methodPaths[len].paths = { ...this.methodPaths[len].paths, [path]: {
+        this.methodPaths[`${len}_${method}`].paths = { ...this.methodPaths[`${len}_${method}`].paths, [path]: {
             method,
             controllers,
             params,
             splited: splits.splice(1),
             param_position,
         } }
-        this.methodPaths[len].paths[path].param_length = splits.length
+        this.methodPaths[`${len}_${method}`].paths[path].param_length = splits.length
     }
-    this.methodPaths[len].path.push(path);
+    this.methodPaths[`${len}_${method}`].path.push(path);
     //console.log({ first: this.methodPaths[len].paths[path], path })
     return len;
 }
 
-Router.prototype.findPattern = function(len, path) {
+Router.prototype.findPattern = function(len, path, method) {
     const path_split = path.split('/').splice(1);
-    const exists = this.methodPaths[len];
+    const exists = this.methodPaths[`${len}_${method}`];
     if(exists) {
         const { path: all_paths, paths } = exists;
         for(let i = 0; i < all_paths.length; i += 1) {
