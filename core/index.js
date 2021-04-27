@@ -19,7 +19,7 @@ const handle = async (req, res, router) => {
         return res.end('Not found')
     }
     const readers = ['post', 'patch', 'put', 'patch']
-    const content_type = req.headers['content-type']
+    const content_type = req.headers['content-type'];
     req.parameter = route_found.paramter;
     
     if(route_found.method.toLowerCase() != method) {
@@ -36,21 +36,28 @@ const handle = async (req, res, router) => {
 
     if(readers.includes(method)) {
         // need to read the body
-        req.body = await readContent(content_type, req);
-    }
-
-    for(let i = 0; i < controllers.length; i += 1) {
-        controllers[i](req, res);
+        req.body = await readContent(content_type, req).then((data) => {
+            req.body = data;
+            for(let i = 0; i < controllers.length; i += 1) {
+                controllers[i](req, res);
+            }
+        }, (val) => {
+            req.body = null
+            controllers[0](req, res)
+        })
     }
 }
 
 const readContent = (content_type, req) => {
-    let buffer = ''
+    let buffer = Buffer.alloc(0)
     return new Promise((res) => {
         req.on('data', (buf) => {
-            buffer += buf.toString('ascii');
+            buffer = Buffer.concat([buffer, buf], buf.length + buffer.length);
         })
         req.on('end', () => {
+            if(!content_type) {
+                return res()
+            }
             if(content_type == 'application/json') {
                 buffer = JSON.parse(buffer);
             } else if(content_type == 'application/x-www-form-urlencoded') {
@@ -63,6 +70,53 @@ const readContent = (content_type, req) => {
                     }
                     buffer = second;
                 }
+            } else if(content_type.indexOf('multipart/form-data') > -1) {
+                console.log({ buffer: buffer.toString() })
+                let matched = buffer.toString().split(/-+\d+\r\n/).splice(1);   
+                //console.log({ buffer: buffer.toString() })
+                let json = {};
+                /**
+                 * The anonymous function to run for normal field
+                 */
+                // run for normal field;
+                (function() {
+                    for(let i = 0; matched && i < matched.length; i += 1) {
+                        const val = matched[i];
+                        //console.log({ val })
+                        let key = val.match(/name=(["](?=(.+?)")\2)/);
+                        if(!key) {
+                            continue
+                        }
+                        key = key[1].replace(/\W+/g, '');
+                        const key_val = val.match(/\r\n\r\n(.+)\r\n/);
+                        if(key_val) {
+                            json[key] = key_val[1];
+                        } else {
+                            const is_file = val.match(/filename="(.*?)"\r\n(content-type:(.*)\r\n)?/i)
+                            if(!is_file) {
+                                continue
+                            }
+                            json[key] = {
+                                field_name: key,
+                                file_name: is_file[1],
+                                file_type: is_file[3].trim()
+                            }
+                            const file = val.match(/content-type:\s*.*?\r\n\r\n(?=(.*?\n))\1/i)
+                            //console.log({ file })
+                        }
+                    }
+                    buffer = json;
+                })(); /*** end for normal field */
+
+                /** this for file content */ 
+                // (function(filematched) {
+                //     if(!filematched) {
+                //         return;
+                //     }
+                //     file['file_name'] = filematched[1].replace(/["\r\n]+/, '');
+                //     file['file_type'] = filematched[2].replace(/["\r\n]+/, '');
+                // })(filematched)
+                /** end of file content */
             }
             res(buffer);
         })
@@ -72,9 +126,10 @@ const readContent = (content_type, req) => {
 const extendResponse = () => {
     const extension = {};
     Object.defineProperty(extension, 'json', {
-        value: function(body = {}) {
+        value: function(body = {}, status = 200) {
             const content_type = 'application/json';
             this.setHeader('Content-Type', content_type);
+            this.statusCode = status;
             return this.end(JSON.stringify(body));
         },
         configurable: false,
