@@ -1,5 +1,6 @@
 const Router = require('../route');
-const util = require('../utility')
+const util = require('../utility');
+
 
 const core = function(router) {
     return function(req, res) {
@@ -18,7 +19,7 @@ const handle = async (req, res, router) => {
         res.writeHead(404, { 'Content-Type': 'application/json' });
         return res.end('Not found')
     }
-    const readers = ['post', 'patch', 'put', 'patch']
+    const readers = ['post', 'patch', 'put', 'patch', 'get']
     const content_type = req.headers['content-type'];
     req.parameter = route_found.paramter;
     
@@ -34,13 +35,22 @@ const handle = async (req, res, router) => {
         throw new Error('No handle set for route ', url);
     }
 
+    const controller_iterator = controllers[Symbol.iterator]();
+
+    const next = function(err) {
+        const { value, done } = controller_iterator.next();
+        if(!done && value.constructor == Function) {
+            value(req, res, next);
+        }
+    }
+
+
     if(readers.includes(method)) {
+
         // need to read the body
         req.body = await readContent(content_type, req).then((data) => {
-            req.body = data;
-            for(let i = 0; i < controllers.length; i += 1) {
-                controllers[i](req, res);
-            }
+        req.body = data;
+            next()
         }, (val) => {
             req.body = null
             controllers[0](req, res)
@@ -130,7 +140,10 @@ const extendResponse = () => {
             const content_type = 'application/json';
             this.setHeader('Content-Type', content_type);
             this.statusCode = status;
-            return this.end(JSON.stringify(body));
+            this.end(JSON.stringify(body));
+            if(this.socket) {
+                this.socket.destroy()
+            }
         },
         configurable: false,
         enumerable: false,
