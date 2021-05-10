@@ -3,9 +3,47 @@ const util = require('../utility');
 
 
 const core = function(router) {
-    return function(req, res) {
+    const apps = function(req, res) {
         handle(req, res, router);
     }
+    apps.use = function() {
+        if(arguments.length == 0) {
+            return;
+        }
+       
+        arguments = Array.from(arguments);
+
+        const first = arguments[0]
+        
+        if(typeof first == 'string' && first.indexOf('/') > -1) {
+           for(let i = 1; i <= arguments.slice(1).length; i += 1) {
+               const func = arguments[i]
+               if(!func || !(func.constructor == Function || func instanceof Router)) {
+                   throw new TypeError('Argument after path should be a function or an instance of router');
+               }
+               if(func instanceof Router) {
+                   const keys = Object.keys(func.methodPaths);
+                   for(let j = 0; j < keys.length; j += 1) {
+                    const split = keys[j].split('/').length;
+
+                    const paths = func.methodPaths[keys[j]].paths;
+                    const path_array = func.methodPaths[keys[j]].path;
+                    for(let k = 0; k < path_array.length; k += 1) {
+                        path_array[k] = `${first}${path_array[k]}`
+                    }
+                    func.methodPaths.path = path_array;
+                    const path_key = Object.keys(paths);
+                    buildNewPaths(path_key, paths, first, func);
+                   }
+                   console.log({
+                    methodpath: func.methodPaths['5_post'].paths, 
+                    methoss: func.methodPaths
+                })
+               }
+           }
+        }
+    }
+    return apps
 }
 
 const handle = async (req, res, router) => {
@@ -24,7 +62,7 @@ const handle = async (req, res, router) => {
     req.parameter = route_found.paramter;
     
     if(route_found.method.toLowerCase() != method) {
-        res.statusCode = 400;
+        res.statusCode = 415;
         return res.json({
             error: 'Method not allowed',
         })
@@ -39,8 +77,8 @@ const handle = async (req, res, router) => {
 
     const next = function(err) {
         const { value, done } = controller_iterator.next();
-        if(!done && value.constructor == Function) {
-            value(req, res, next);
+        if(!done && value && value.constructor == Function) {
+            value(req, res, next, err);
         }
     }
 
@@ -80,54 +118,45 @@ const readContent = (content_type, req) => {
                     }
                     buffer = second;
                 }
-            } else if(content_type.indexOf('multipart/form-data') > -1) {
-                console.log({ buffer: buffer.toString() })
-                let matched = buffer.toString().split(/-+\d+\r\n/).splice(1);   
-                //console.log({ buffer: buffer.toString() })
-                let json = {};
-                /**
-                 * The anonymous function to run for normal field
-                 */
-                // run for normal field;
-                (function() {
-                    for(let i = 0; matched && i < matched.length; i += 1) {
-                        const val = matched[i];
-                        //console.log({ val })
-                        let key = val.match(/name=(["](?=(.+?)")\2)/);
-                        if(!key) {
-                            continue
-                        }
-                        key = key[1].replace(/\W+/g, '');
-                        const key_val = val.match(/\r\n\r\n(.+)\r\n/);
-                        if(key_val) {
-                            json[key] = key_val[1];
-                        } else {
-                            const is_file = val.match(/filename="(.*?)"\r\n(content-type:(.*)\r\n)?/i)
-                            if(!is_file) {
-                                continue
-                            }
-                            json[key] = {
-                                field_name: key,
-                                file_name: is_file[1],
-                                file_type: is_file[3].trim()
-                            }
-                            const file = val.match(/content-type:\s*.*?\r\n\r\n(?=(.*?\n))\1/i)
-                            //console.log({ file })
-                        }
-                    }
-                    buffer = json;
-                })(); /*** end for normal field */
-
-                /** this for file content */ 
-                // (function(filematched) {
-                //     if(!filematched) {
-                //         return;
-                //     }
-                //     file['file_name'] = filematched[1].replace(/["\r\n]+/, '');
-                //     file['file_type'] = filematched[2].replace(/["\r\n]+/, '');
-                // })(filematched)
-                /** end of file content */
-            }
+            } 
+            // else if(content_type.indexOf('multipart/form-data') > -1) {
+            //     console.log({ buffer: buffer.toString() })
+            //     let matched = buffer.toString().split(/-+\d+\r\n/).splice(1);   
+            //     //console.log({ buffer: buffer.toString() })
+            //     let json = {};
+            //     /**
+            //      * The anonymous function to run for normal field
+            //      */
+            //     // run for normal field;
+            //     (function() {
+            //         for(let i = 0; matched && i < matched.length; i += 1) {
+            //             const val = matched[i];
+            //             //console.log({ val })
+            //             let key = val.match(/name=(["](?=(.+?)")\2)/);
+            //             if(!key) {
+            //                 continue
+            //             }
+            //             key = key[1].replace(/\W+/g, '');
+            //             const key_val = val.match(/\r\n\r\n(.+)\r\n/);
+            //             if(key_val) {
+            //                 json[key] = key_val[1];
+            //             } else {
+            //                 const is_file = val.match(/filename="(.*?)"\r\n(content-type:(.*)\r\n)?/i)
+            //                 if(!is_file) {
+            //                     continue
+            //                 }
+            //                 json[key] = {
+            //                     field_name: key,
+            //                     file_name: is_file[1],
+            //                     file_type: is_file[3].trim()
+            //                 }
+            //                 const file = val.match(/content-type:\s*.*?\r\n\r\n(?=(.*?\n))\1/i)
+            //                 //console.log({ file })
+            //             }
+            //         }
+            //         buffer = json;
+            //     })(); /*** end for normal field */
+            // }
             res(buffer);
         })
     })
@@ -152,8 +181,16 @@ const extendResponse = () => {
     return extension;
 }
 
-const next = () => {
-    
+const buildNewPaths = (keys, object, prepend, router) => {
+    if(!keys || keys.length == 0) {
+        return;
+    }
+    for(let i = 0; i < keys.length; i += 1) {
+        const method = object[keys[i]].method;
+        const controllers = object[keys[i]].controllers;
+        router[method](`${prepend}${keys[i]}`, ...controllers)
+        delete object[keys[i]];
+    }
 }
 
 module.exports = core;

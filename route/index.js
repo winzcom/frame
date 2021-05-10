@@ -67,11 +67,15 @@ Router.prototype.getParams = function (path, controllers, method) {
 Router.prototype.findPattern = function(len, path, method) {
     const path_split = path.split('/').splice(1);
     const exists = this.methodPaths[`${len}_${method}`];
+    console.log({ exists })
     if(exists) {
         const { path: all_paths, paths } = exists;
         for(let i = 0; i < all_paths.length; i += 1) {
             let it = all_paths[i];
             let set = paths[it];
+            if(!set) {
+                return
+            }
             set.paramter = {}
             if(all_paths[i] == path) { 
                 return set

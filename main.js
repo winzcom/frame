@@ -6,13 +6,20 @@ const http = require('http');
 
 const router = new Route();
 
-const server = http.Server(core(router));
+const app = core(router)
+
+const server = http.Server(app);
 
 router.post('/login/:bvn/gt/:run', (req, res, next) => {
     const { bvn, run } = req.parameter;
     const { body } = req;
+    next()
+},(req, res, next) => {
+    const { bvn, run } = req.parameter;
+    const { body } = req;
+    next()
     res.json({
-        message:'I am there with you love',
+        message:'I am there with you love right now',
         data: {
             name: bvn,
             run: Boolean(run),
@@ -27,6 +34,7 @@ router.get('/lk', (req, res) => {
         message: 'there'
     })
 })
+app.use('/run', router);
 
 router.get('/login/:bvn/gt/:run', (req, res, next) => {
     try {
@@ -42,7 +50,6 @@ router.get('/login/:bvn/gt/:run', (req, res, next) => {
 }, (req, res, next) => {
     const { bvn, run } = req.parameter;
     const { body } = req;
-    console.log({ next })
     res.json({
         message:'I am next to you '+ req.user,
         data: {
