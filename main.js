@@ -12,7 +12,8 @@ const server = http.Server(app);
 
 router.post('/login/:bvn/gt/:run', (req, res, next) => {
     const { bvn, run } = req.parameter;
-    const { body } = req;
+    const { body, oh } = req;
+    console.log({ oh })
     next()
 },(req, res, next) => {
     const { bvn, run } = req.parameter;
@@ -27,19 +28,30 @@ router.post('/login/:bvn/gt/:run', (req, res, next) => {
         }
     })
 })
+app.use(function(req, res, next) {
+    req.oh = 'yes'
+    next();
+})
 
 router.get('/lk', (req, res) => {
-    console.log('there you are')
     res.json({
-        message: 'there'
+        message: 'there '+ req.oh
     })
 })
+
 app.use('/run', router);
+
+app.use('/see/me', (req, res, next) => {
+   next()
+}, (req, res) => {
+    res.json({
+        message: '5 millions ' + req.oh
+    })
+})
 
 router.get('/login/:bvn/gt/:run', (req, res, next) => {
     try {
         req.user = 'sewtting user here'
-        console.log('this will be called first ')
         next()
     } catch (error) {
         res.statusCode = 400

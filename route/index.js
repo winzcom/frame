@@ -1,6 +1,10 @@
 let instance;
 const Router = function() {
+    if(instance) {
+        return instance;
+    }
      this.methodPaths = {}
+     instance = this;
 }
 Router.prototype.get = function (path, ...controllers)  {
     const len = this.getParams(path, controllers, 'get');
@@ -67,7 +71,7 @@ Router.prototype.getParams = function (path, controllers, method) {
 Router.prototype.findPattern = function(len, path, method) {
     const path_split = path.split('/').splice(1);
     const exists = this.methodPaths[`${len}_${method}`];
-    console.log({ exists })
+    //console.log({ exists: exists.paths['/see/me'] })
     if(exists) {
         const { path: all_paths, paths } = exists;
         for(let i = 0; i < all_paths.length; i += 1) {

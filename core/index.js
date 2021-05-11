@@ -6,6 +6,7 @@ const core = function(router) {
     const apps = function(req, res) {
         handle(req, res, router);
     }
+    apps.positions = [];
     apps.use = function() {
         if(arguments.length == 0) {
             return;
@@ -33,14 +34,14 @@ const core = function(router) {
                     }
                     func.methodPaths.path = path_array;
                     const path_key = Object.keys(paths);
-                    buildNewPaths(path_key, paths, first, func);
+                    buildNewPathsWithRouter(path_key, paths, first, func, this.positions);
                    }
-                   console.log({
-                    methodpath: func.methodPaths['5_post'].paths, 
-                    methoss: func.methodPaths
-                })
+               } else {
+                   buildNewPaths(first, router, arguments.slice(1), this.positions);
                }
            }
+        } else if(typeof first == 'function') {
+             this.positions.push(first);
         }
     }
     return apps
@@ -57,7 +58,7 @@ const handle = async (req, res, router) => {
         res.writeHead(404, { 'Content-Type': 'application/json' });
         return res.end('Not found')
     }
-    const readers = ['post', 'patch', 'put', 'patch', 'get']
+    const readers = ['post', 'patch', 'put', 'patch', 'get', 'delete']
     const content_type = req.headers['content-type'];
     req.parameter = route_found.paramter;
     
@@ -181,15 +182,29 @@ const extendResponse = () => {
     return extension;
 }
 
-const buildNewPaths = (keys, object, prepend, router) => {
+const buildNewPathsWithRouter = (keys, object, prepend, router, positions) => {
     if(!keys || keys.length == 0) {
         return;
     }
     for(let i = 0; i < keys.length; i += 1) {
         const method = object[keys[i]].method;
         const controllers = object[keys[i]].controllers;
+        for(let j = positions.length - 1; j >=0 ; j -= 1) {
+            controllers.unshift(positions[j]);
+        }
         router[method](`${prepend}${keys[i]}`, ...controllers)
         delete object[keys[i]];
+    }
+}
+
+const buildNewPaths = (path, router, controllers, positions) => {
+    const methods = ['get', 'post', 'patch', 'put', 'delete'];
+    const new_router = new Router();
+    for(let j = positions.length - 1; j >=0 ; j -= 1) {
+        controllers.unshift(positions[j]);
+    }
+    for(let i = 0; i < methods.length; i += 1) {
+        new_router[methods[i]](path, ...controllers);
     }
 }
 
