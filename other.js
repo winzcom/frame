@@ -6,7 +6,7 @@ router.post('/login/:bvn/gt/:run', (req, res, next) => {
     const { bvn, run } = req.parameter;
     const { body, oh } = req;
     console.log({ oh })
-    next()
+    next(new Error('i am throwing an error here'))
 },(req, res, next) => {
     const { bvn, run } = req.parameter;
     const { body } = req;

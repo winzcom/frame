@@ -20,4 +20,12 @@ router.get('/healed', (req, res) => {
     })
 })
 
+router.post('/rich/:id/:pos', (req, res) => {
+    const { id, pos } = req.parameter;
+    console.log('called')
+    res.json({
+        message: pos
+    })
+})
+
 module.exports = router

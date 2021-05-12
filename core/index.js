@@ -1,10 +1,11 @@
+const { methodPaths } = require('../other');
 const Router = require('../route');
 const util = require('../utility');
 
 
 const core = function(router) {
     const router_arrays = {};
-    const routers = [];
+    let error_handler = undefined;
     const apps = function(req, res) {
         const first_path = req.url.match(/\/[^/]+/)
         const route = router_arrays[first_path];
@@ -12,7 +13,8 @@ const core = function(router) {
             sendNotFound(res);
             return;
         }
-        handle(req, res, route);
+        //console.log({ route: route.methodPaths['3_post'].paths['/rich/:id'] })
+        handle(req, res, route, error_handler);
     }
     apps.positions = [];
     apps.use = function() {
@@ -49,19 +51,25 @@ const core = function(router) {
                     buildNewPathsWithRouter(path_key, paths, first, func, this.positions);
                     router_arrays[first] = func;
                    }
-                   routers.push(func);
                } else {
                    buildNewPaths(first, router, arguments.slice(1), this.positions);
                }
            }
         } else if(typeof first == 'function') {
              this.positions.push(first);
+             const func_signature = Object.getOwnPropertyDescriptors(first);
+             const argument_length = func_signature.length.value;
+             if(argument_length == 4 && !error_handler) {
+                 // this is an error handler to be called with an error for all route.
+                 error_handler = first;
+                 console.log({ error_handler })
+             }
         }
     }
     return apps
 }
 
-const handle = async (req, res, router) => {
+const handle = async (req, res, router, error_handler) => {
     const url = req.url;
     const method = req.method.toLowerCase();
     const route_found = router.findPattern(url.split('/').length, url, method);
@@ -91,6 +99,12 @@ const handle = async (req, res, router) => {
     const controller_iterator = controllers[Symbol.iterator]();
 
     const next = function(err) {
+        if(err) {
+            if(error_handler) {
+                error_handler(req, res, next, err);
+                return;
+            }
+        }
         const { value, done } = controller_iterator.next();
         if(!done && value && value.constructor == Function) {
             value(req, res, next, err);
@@ -134,44 +148,6 @@ const readContent = (content_type, req) => {
                     buffer = second;
                 }
             } 
-            // else if(content_type.indexOf('multipart/form-data') > -1) {
-            //     console.log({ buffer: buffer.toString() })
-            //     let matched = buffer.toString().split(/-+\d+\r\n/).splice(1);   
-            //     //console.log({ buffer: buffer.toString() })
-            //     let json = {};
-            //     /**
-            //      * The anonymous function to run for normal field
-            //      */
-            //     // run for normal field;
-            //     (function() {
-            //         for(let i = 0; matched && i < matched.length; i += 1) {
-            //             const val = matched[i];
-            //             //console.log({ val })
-            //             let key = val.match(/name=(["](?=(.+?)")\2)/);
-            //             if(!key) {
-            //                 continue
-            //             }
-            //             key = key[1].replace(/\W+/g, '');
-            //             const key_val = val.match(/\r\n\r\n(.+)\r\n/);
-            //             if(key_val) {
-            //                 json[key] = key_val[1];
-            //             } else {
-            //                 const is_file = val.match(/filename="(.*?)"\r\n(content-type:(.*)\r\n)?/i)
-            //                 if(!is_file) {
-            //                     continue
-            //                 }
-            //                 json[key] = {
-            //                     field_name: key,
-            //                     file_name: is_file[1],
-            //                     file_type: is_file[3].trim()
-            //                 }
-            //                 const file = val.match(/content-type:\s*.*?\r\n\r\n(?=(.*?\n))\1/i)
-            //                 //console.log({ file })
-            //             }
-            //         }
-            //         buffer = json;
-            //     })(); /*** end for normal field */
-            // }
             res(buffer);
         })
     })

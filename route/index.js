@@ -67,7 +67,6 @@ Router.prototype.getParams = function (path, controllers, method) {
 Router.prototype.findPattern = function(len, path, method) {
     const path_split = path.split('/').splice(1);
     const exists = this.methodPaths[`${len}_${method}`];
-    //console.log({ exists: exists.paths['/see/me'] })
     if(exists) {
         const { path: all_paths, paths } = exists;
         for(let i = 0; i < all_paths.length; i += 1) {
@@ -82,6 +81,7 @@ Router.prototype.findPattern = function(len, path, method) {
             } else {
                 const { param_length, params, param_position, splited } = set;
                 let setdone = 0;
+                console.log({ params, splited })
                 for(let i = 0; i < splited.length; i += 1) {
                     if(splited[i] == path_split[i]) {
                         ++setdone

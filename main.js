@@ -13,6 +13,10 @@ const server = http.Server(app);
 const what = require('./what')
 const other = require('./other');
 
+app.use((req, res, next) => {
+    next()
+})
+
 app.use(function(req, res, next) {
     console.log('you should be second')
     req.oh = 'yes'
@@ -57,6 +61,11 @@ router.get('/login/:bvn/gt/:run', (req, res, next) => {
             body
         }
     })
+})
+
+app.use(function(req, res, next, err) {
+    console.log('i am an error handler '+ err.constructor);
+    next()
 })
 
 server.listen('9080', () => {
