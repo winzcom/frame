@@ -31,6 +31,13 @@ Router.regexPath = (path) => {
 }
 
 Router.prototype.getParams = function (path, controllers, method) {
+    if(controllers.length == 0) {
+        throw new Error(`Need to have handlers for the route ${path}`);
+    }
+    const exists_already = this.findPattern(path.split('/').length, path, method);
+    if(exists_already) {
+        throw new Error(`Duplicate handler for ${path} and method ${method}`);
+    }
     const paths = Router.regexPath(path);
     const first = paths[0];
     let splits = first.split('/')

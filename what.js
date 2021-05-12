@@ -20,6 +20,12 @@ router.get('/healed', (req, res) => {
     })
 })
 
+router.post('/healed', (req, res) => {
+    res.json({
+        message: 'I am healed.'
+    })
+});
+
 router.post('/rich/:id/:pos', (req, res) => {
     const { id, pos } = req.parameter;
     console.log('called')
