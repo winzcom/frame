@@ -18,12 +18,10 @@ app.use((req, res, next) => {
 })
 
 app.use(function(req, res, next) {
-    console.log('you should be second')
     req.oh = 'yes'
     next();
 })
 app.use(function(req, res, next) {
-    console.log('you should be first')
     req.command = 'no'
     next();
 })
@@ -64,7 +62,6 @@ router.get('/login/:bvn/gt/:run', (req, res, next) => {
 })
 
 app.use(function(req, res, next, err) {
-    console.log('i am an error handler '+ err.constructor);
     next()
 })
 

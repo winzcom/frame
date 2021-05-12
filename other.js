@@ -10,13 +10,15 @@ router.post('/login/:bvn/gt/:run', (req, res, next) => {
 },(req, res, next) => {
     const { bvn, run } = req.parameter;
     const { body } = req;
-    next()
+    const { save, picked } = req.query;
     res.json({
         message:'I am there with you love right now',
         data: {
             name: bvn,
             run: Boolean(run),
-            body
+            body,
+            save,
+            picked,
         }
     })
 })

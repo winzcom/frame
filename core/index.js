@@ -111,6 +111,14 @@ const handle = async (req, res, router, error_handler) => {
         }
     }
 
+    const query_entries = new URL(`${req.headers.host}${req.url}`).searchParams.entries();
+    const query = {}
+    for(let val of query_entries) {
+        query[val[0]] = val[1];
+    }
+
+    req.query = query
+
 
     if(readers.includes(method)) {
 
