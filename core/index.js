@@ -3,8 +3,16 @@ const util = require('../utility');
 
 
 const core = function(router) {
+    const router_arrays = {};
+    const routers = [];
     const apps = function(req, res) {
-        handle(req, res, router);
+        const first_path = req.url.match(/\/[^/]+/)
+        const route = router_arrays[first_path];
+        if(!route){
+            sendNotFound(res);
+            return;
+        }
+        handle(req, res, route);
     }
     apps.positions = [];
     apps.use = function() {
@@ -23,6 +31,10 @@ const core = function(router) {
                    throw new TypeError('Argument after path should be a function or an instance of router');
                }
                if(func instanceof Router) {
+                if(first.length == 1) {
+                    buildRouterMap(func, router_arrays, this.positions)
+                    return;
+                }
                    const keys = Object.keys(func.methodPaths);
                    for(let j = 0; j < keys.length; j += 1) {
                     const split = keys[j].split('/').length;
@@ -35,7 +47,9 @@ const core = function(router) {
                     func.methodPaths.path = path_array;
                     const path_key = Object.keys(paths);
                     buildNewPathsWithRouter(path_key, paths, first, func, this.positions);
+                    router_arrays[first] = func;
                    }
+                   routers.push(func);
                } else {
                    buildNewPaths(first, router, arguments.slice(1), this.positions);
                }
@@ -206,6 +220,31 @@ const buildNewPaths = (path, router, controllers, positions) => {
     for(let i = 0; i < methods.length; i += 1) {
         new_router[methods[i]](path, ...controllers);
     }
+}
+
+const buildRouterMap = (router, router_arrays, positions) => {
+    const { methodPaths } = router;
+    for(let j in methodPaths) {
+       const df = methodPaths[j];
+       //console.log({ df })
+       const { paths: pc } = df;
+        for(let k in pc) {
+            const { controllers } = pc[k]
+            for(let j = positions.length - 1; j >=0 ; j -= 1) {
+                controllers.unshift(positions[j]);
+            }
+        }
+        const paths = df.path
+        for(let i = 0; i < paths.length; i += 1) {
+            const f = paths[i].match(/\/[^/]+/)[0]
+            router_arrays[f] = router; 
+        }
+    }
+}
+
+const sendNotFound = (res) => {
+    res.statusCode = 404;
+    res.end('NOT FOUND')
 }
 
 module.exports = core;

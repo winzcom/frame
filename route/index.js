@@ -1,10 +1,6 @@
 let instance;
 const Router = function() {
-    if(instance) {
-        return instance;
-    }
      this.methodPaths = {}
-     instance = this;
 }
 Router.prototype.get = function (path, ...controllers)  {
     const len = this.getParams(path, controllers, 'get');

@@ -6,40 +6,27 @@ const http = require('http');
 
 const router = new Route();
 
-const app = core(router)
+const app = core()
 
 const server = http.Server(app);
 
-router.post('/login/:bvn/gt/:run', (req, res, next) => {
-    const { bvn, run } = req.parameter;
-    const { body, oh } = req;
-    console.log({ oh })
-    next()
-},(req, res, next) => {
-    const { bvn, run } = req.parameter;
-    const { body } = req;
-    next()
-    res.json({
-        message:'I am there with you love right now',
-        data: {
-            name: bvn,
-            run: Boolean(run),
-            body
-        }
-    })
-})
+const what = require('./what')
+const other = require('./other');
+
 app.use(function(req, res, next) {
+    console.log('you should be second')
     req.oh = 'yes'
     next();
 })
-
-router.get('/lk', (req, res) => {
-    res.json({
-        message: 'there '+ req.oh
-    })
+app.use(function(req, res, next) {
+    console.log('you should be first')
+    req.command = 'no'
+    next();
 })
 
-app.use('/run', router);
+app.use('/', what);
+
+app.use('/run', other);
 
 app.use('/see/me', (req, res, next) => {
    next()
