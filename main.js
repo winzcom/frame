@@ -28,17 +28,24 @@ app.use('/', what);
 
 app.use('/run', other);
 
-app.use('/see/me', (req, res, next) => {
-   next()
-}, (req, res) => {
+app.use('/see/me/:id', (req, res) => {
+    console.log({ parma: req.parameter })
     res.json({
         message: '5 millions ' + req.oh
+    })
+})
+
+app.use('/see/:id/me', (req, res) => {
+    console.log({ parma: req.parameter })
+    res.json({
+        message: '7 millions ' + req.oh
     })
 })
 
 app.use('/see/me/kl', (req, res, next) => {
     next()
  }, (req, res) => {
+     console.log({ parma: req.parameter })
      res.json({
          message: '6 millions ' + req.oh
      })

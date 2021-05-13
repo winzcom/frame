@@ -61,6 +61,7 @@ Router.prototype.getParams = function (path, controllers, method) {
             method,
             controllers,
             params,
+            has_param: params.length > 0,
             splited: splits.splice(1),
             param_position,
         } }
@@ -88,7 +89,6 @@ Router.prototype.findPattern = function(len, path, method) {
             } else {
                 const { param_length, params, param_position, splited } = set;
                 let setdone = 0;
-                console.log({ params, splited })
                 for(let i = 0; i < splited.length; i += 1) {
                     if(splited[i] == path_split[i]) {
                         ++setdone
@@ -97,6 +97,7 @@ Router.prototype.findPattern = function(len, path, method) {
                     }
                 }
                 if(setdone == splited.length - params.length) {
+                    //console.log({ set })
                     return set;
                 }
             }

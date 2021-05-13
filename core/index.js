@@ -1,7 +1,9 @@
-const { methodPaths } = require('../other');
+
 const http = require('http');
+//************* */
 const Router = require('../route');
 const util = require('../utility');
+const services = require('./services');
 
 
 const core = function(options) {
@@ -9,13 +11,14 @@ const core = function(options) {
     let server;
     let error_handler = undefined;
     const apps = function(req, res) {
-        const first_path = req.url.match(/\/[^/]+/)
-        const route = router_arrays[req.url];
+        //const route = router_arrays[req.url];
+        const fg = services.getRouteForPath(req.url, router_arrays, req.method);
+        console.log({ fg })
+        const route = router_arrays[fg]
         if(!route){
-            sendNotFound(res);
+            services.sendNotFound(res);
             return;
         }
-        //console.log({ route: route.methodPaths['3_post'].paths['/rich/:id'] })
         handle(req, res, route, error_handler);
     }
     if(options.https && options.key && options.cert) {
@@ -43,7 +46,7 @@ const core = function(options) {
                }
                if(func instanceof Router) {
                 if(first.length == 1) {
-                    buildRouterMap(func, router_arrays, this.positions)
+                    services.buildRouterMap(func, router_arrays, this.positions)
                     return;
                 }
                    const keys = Object.keys(func.methodPaths);
@@ -57,22 +60,22 @@ const core = function(options) {
                     }
                     func.methodPaths.path = path_array;
                     const path_key = Object.keys(paths);
-                    buildNewPathsWithRouter(path_key, paths, first, func, this.positions,router_arrays);
+                    services.buildNewPathsWithRouter(path_key, paths, first, func, this.positions,router_arrays);
                     //router_arrays[first] = func;
                    }
                } else {
-                   buildNewPaths(first, arguments.slice(1), this.positions, router_arrays);
+                   services.buildNewPaths(first, arguments.slice(1), this.positions, router_arrays);
                }
            }
         } else if(typeof first == 'function') {
-             this.positions.push(first);
              const func_signature = Object.getOwnPropertyDescriptors(first);
              const argument_length = func_signature.length.value;
              if(argument_length == 4 && !error_handler) {
                  // this is an error handler to be called with an error for all route.
                  error_handler = first;
-                 console.log({ error_handler })
+                 return
              }
+             this.positions.push(first);
         }
     }
     apps.listen = (port, callback) => {
@@ -84,9 +87,11 @@ const core = function(options) {
 const handle = async (req, res, router, error_handler) => {
     const url = req.url;
     const method = req.method.toLowerCase();
-    const route_found = router.findPattern(url.split('/').length, url, method);
+    const url_split = url.split('/')
+    const len = url_split.length;
+    let route_found = router.findPattern(len, url, method);
 
-    util.extend(extendResponse(), res);
+    util.extend(services.extendResponse(), res);
 
     if(!route_found) {
         res.writeHead(404, { 'Content-Type': 'application/json' });
@@ -145,6 +150,10 @@ const handle = async (req, res, router, error_handler) => {
     }
 }
 
+const readContent2 = function* (content_type, req) {
+    req.on()
+}
+
 const readContent = (content_type, req) => {
     let buffer = Buffer.alloc(0)
     return new Promise((res) => {
@@ -171,80 +180,6 @@ const readContent = (content_type, req) => {
             res(buffer);
         })
     })
-}
-
-const extendResponse = () => {
-    const extension = {};
-    Object.defineProperty(extension, 'json', {
-        value: function(body = {}, status = 200) {
-            const content_type = 'application/json';
-            this.setHeader('Content-Type', content_type);
-            this.statusCode = status;
-            this.end(JSON.stringify(body));
-            if(this.socket) {
-                this.socket.destroy()
-            }
-        },
-        configurable: false,
-        enumerable: false,
-        writable: true,
-    })
-    return extension;
-}
-
-const buildNewPathsWithRouter = (keys, object, prepend, router, positions, router_arrays) => {
-    if(!keys || keys.length == 0) {
-        return;
-    }
-    for(let i = 0; i < keys.length; i += 1) {
-        const method = object[keys[i]].method;
-        const controllers = object[keys[i]].controllers;
-        for(let j = positions.length - 1; j >=0 ; j -= 1) {
-            controllers.unshift(positions[j]);
-        }
-        router[method](`${prepend}${keys[i]}`, ...controllers)
-        delete object[keys[i]];
-        router_arrays[`${prepend}${keys[i]}`] = router;
-    }
-}
-
-const buildNewPaths = (path, controllers, positions, router_arrays) => {
-    const methods = ['get', 'post', 'patch', 'put', 'delete'];
-    const new_router = new Router();
-    for(let j = positions.length - 1; j >=0 ; j -= 1) {
-        controllers.unshift(positions[j]);
-    }
-    for(let i = 0; i < methods.length; i += 1) {
-        new_router[methods[i]](path, ...controllers);
-    }
-    //path = '/' + path.split('/')[1];
-    
-    router_arrays[path] = new_router;
-}
-
-const buildRouterMap = (router, router_arrays, positions) => {
-    const { methodPaths } = router;
-    for(let j in methodPaths) {
-       const df = methodPaths[j];
-       //console.log({ df })
-       const { paths: pc } = df;
-        for(let k in pc) {
-            const { controllers } = pc[k]
-            for(let j = positions.length - 1; j >=0 ; j -= 1) {
-                controllers.unshift(positions[j]);
-            }
-        }
-        const paths = df.path
-        for(let i = 0; i < paths.length; i += 1) {
-            //const f = paths[i].match(/\/[^/]+/)[0]
-            router_arrays[paths[i]] = router; 
-        }
-    }
-}
-
-const sendNotFound = (res) => {
-    res.statusCode = 404;
-    res.end('NOT FOUND')
 }
 
 module.exports = core;
