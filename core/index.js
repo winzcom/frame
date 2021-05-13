@@ -1,20 +1,29 @@
 const { methodPaths } = require('../other');
+const http = require('http');
 const Router = require('../route');
 const util = require('../utility');
 
 
-const core = function(router) {
+const core = function(options) {
     const router_arrays = {};
+    let server;
     let error_handler = undefined;
     const apps = function(req, res) {
         const first_path = req.url.match(/\/[^/]+/)
-        const route = router_arrays[first_path];
+        const route = router_arrays[req.url];
         if(!route){
             sendNotFound(res);
             return;
         }
         //console.log({ route: route.methodPaths['3_post'].paths['/rich/:id'] })
         handle(req, res, route, error_handler);
+    }
+    if(options.https && options.key && options.cert) {
+        const https = require('https');
+        console.log('this is https')
+        server = https.Server(options, apps);
+    } else {
+        server = http.Server(apps);
     }
     apps.positions = [];
     apps.use = function() {
@@ -48,11 +57,11 @@ const core = function(router) {
                     }
                     func.methodPaths.path = path_array;
                     const path_key = Object.keys(paths);
-                    buildNewPathsWithRouter(path_key, paths, first, func, this.positions);
-                    router_arrays[first] = func;
+                    buildNewPathsWithRouter(path_key, paths, first, func, this.positions,router_arrays);
+                    //router_arrays[first] = func;
                    }
                } else {
-                   buildNewPaths(first, router, arguments.slice(1), this.positions);
+                   buildNewPaths(first, arguments.slice(1), this.positions, router_arrays);
                }
            }
         } else if(typeof first == 'function') {
@@ -65,6 +74,9 @@ const core = function(router) {
                  console.log({ error_handler })
              }
         }
+    }
+    apps.listen = (port, callback) => {
+        server.listen(port, callback);
     }
     return apps
 }
@@ -180,7 +192,7 @@ const extendResponse = () => {
     return extension;
 }
 
-const buildNewPathsWithRouter = (keys, object, prepend, router, positions) => {
+const buildNewPathsWithRouter = (keys, object, prepend, router, positions, router_arrays) => {
     if(!keys || keys.length == 0) {
         return;
     }
@@ -192,10 +204,11 @@ const buildNewPathsWithRouter = (keys, object, prepend, router, positions) => {
         }
         router[method](`${prepend}${keys[i]}`, ...controllers)
         delete object[keys[i]];
+        router_arrays[`${prepend}${keys[i]}`] = router;
     }
 }
 
-const buildNewPaths = (path, router, controllers, positions) => {
+const buildNewPaths = (path, controllers, positions, router_arrays) => {
     const methods = ['get', 'post', 'patch', 'put', 'delete'];
     const new_router = new Router();
     for(let j = positions.length - 1; j >=0 ; j -= 1) {
@@ -204,6 +217,9 @@ const buildNewPaths = (path, router, controllers, positions) => {
     for(let i = 0; i < methods.length; i += 1) {
         new_router[methods[i]](path, ...controllers);
     }
+    //path = '/' + path.split('/')[1];
+    
+    router_arrays[path] = new_router;
 }
 
 const buildRouterMap = (router, router_arrays, positions) => {
@@ -220,8 +236,8 @@ const buildRouterMap = (router, router_arrays, positions) => {
         }
         const paths = df.path
         for(let i = 0; i < paths.length; i += 1) {
-            const f = paths[i].match(/\/[^/]+/)[0]
-            router_arrays[f] = router; 
+            //const f = paths[i].match(/\/[^/]+/)[0]
+            router_arrays[paths[i]] = router; 
         }
     }
 }

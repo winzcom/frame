@@ -1,14 +1,12 @@
 "use strict";
-const Route = require('./route')
 const core = require('./core')
-const http = require('http');
 
 
-const router = new Route();
+const app = core({
+    https: true,
+})
 
-const app = core()
-
-const server = http.Server(app);
+//const server = http.Server(app);
 
 const what = require('./what')
 const other = require('./other');
@@ -38,33 +36,18 @@ app.use('/see/me', (req, res, next) => {
     })
 })
 
-router.get('/login/:bvn/gt/:run', (req, res, next) => {
-    try {
-        req.user = 'sewtting user here'
-        next()
-    } catch (error) {
-        res.statusCode = 400
-        res.json({
-            message: error.message
-        })
-    }
-}, (req, res, next) => {
-    const { bvn, run } = req.parameter;
-    const { body } = req;
-    res.json({
-        message:'I am next to you '+ req.user,
-        data: {
-            name: bvn,
-            run,
-            body
-        }
-    })
-})
+app.use('/see/me/kl', (req, res, next) => {
+    next()
+ }, (req, res) => {
+     res.json({
+         message: '6 millions ' + req.oh
+     })
+ })
 
 app.use(function(req, res, next, err) {
     next()
 })
 
-server.listen('9080', () => {
+app.listen('9080', () => {
     console.log('start listening');
 })
