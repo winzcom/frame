@@ -97,10 +97,7 @@ const buildRouterMap = (router, router_arrays, positions) => {
             for(let j = positions.length - 1; j >=0 ; j -= 1) {
                 controllers.unshift(positions[j]);
             }
-        }
-        const paths = df.path
-        for(let i = 0; i < paths.length; i += 1) {
-            saveRouteForPath(paths[i], router_arrays, router, pc[paths[i]].has_param, );
+            saveRouteForPath(k, router_arrays, router, pc[k].has_param, pc[k].method);
         }
     }
 }
@@ -108,17 +105,19 @@ const buildRouterMap = (router, router_arrays, positions) => {
 const saveRouteForPath = (path, router_array, router, has_param, method) => {
     const len_path = path.split('/');
     if(!has_param) {
-        router_array[`${method}_${path}`] = router;
+        router_array[`${method}_${path}`] = router
     } else {
-        router_array[`/${len_path[1]}`] = router;
+        const set = `${method}_/${len_path[1]}`
+        router_array[set] = router;
     }
 }
 
 const getRouteForPath = (path, router_array, method) => {
     const len_path = path.split('/');
+    method = method.toLowerCase()
     if(router_array[`${method.toLowerCase()}_${path}`]) {
         return `${method.toLowerCase()}_${path}`;
-    } else return `/${len_path[1]}`
+    } else return `${method}_/${len_path[1]}`
 }
 
 const sendNotFound = (res) => {

@@ -14,12 +14,12 @@ const core = function(options) {
         //const route = router_arrays[req.url];
         const fg = services.getRouteForPath(req.url, router_arrays, req.method);
         console.log({ fg })
-        const route = router_arrays[fg]
-        if(!route){
+        const router = router_arrays[fg]
+        if(!router){
             services.sendNotFound(res);
             return;
         }
-        handle(req, res, route, error_handler);
+        handle(req, res, router, error_handler);
     }
     if(options.https && options.key && options.cert) {
         const https = require('https');
