@@ -1,0 +1,19 @@
+# Created by https://www.gitignore.io/api/node
+
+# Coverage directory used by tools like istanbul
+coverage
+
+
+# Dependency directories
+vendor
+
+# dotenv environment variables file
+.env
+.env.test
+
+# End of https://www.gitignore.io/api/node
+`
+# sqlite database
+.github/workflows
+temp
+ds.csv
