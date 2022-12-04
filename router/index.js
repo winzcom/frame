@@ -53,7 +53,7 @@ class Router {
            }
        }
        parent.methods[method] = method
-       return parent
+       return this
     }
 
     addToList(path, router) {
@@ -73,6 +73,7 @@ class Router {
         for(let j of starter) {
             leader.children[index - 1].children.push(j)
         }
+        return this
     }
 
     insert(path, router) {
@@ -84,13 +85,18 @@ class Router {
 
         const path_split = path.split('/')
 
+        //console.log({ path_split })
+
         for(let i = 0; i < path_split.length; i += 1) {
             const cur = path_split[i]
+
+            //console.log({ cur })
             let found = false, first_param_occurence = -1
             
             for(let j = 0; j < parent.children.length; j += 1) {
                 let p = parent.children[j]
                 if(p.path == cur) {
+                    //console.log({ p:p.children })
                     parent = p
                     found = true
                     break
@@ -105,8 +111,7 @@ class Router {
                 parent = parent.children[first_param_occurence]
             }
         }
-
-        if(parent.is_start || Object.keys(parent.methods).length == 0) {
+        if(parent.is_start || !parent.methods || Object.keys(parent.methods).length == 0) {
             return null
         }
         return parent
@@ -125,11 +130,10 @@ test.set('run/running/runner', [function running() {}, function track(){} ], 'pa
 const n = new Router()
 n.addToList('run', test)
 
-let d = test.paths[Router.startPoint].children[0]
-
+n.addToList('event', test)
 console.log({
     //routers: d.children[0].children,
-    finda: n.find('run/trace/run/test/go').controllers
+    finda: test.find('trace/run/test/go').controllers
 })
 
 
