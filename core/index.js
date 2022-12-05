@@ -17,10 +17,12 @@ function express() {
     return function(req, res) {
         let path = req.path
         let method = req.method.toLowerCase()
-        const route = router.find(path)
-        if(!route) {
-            throw new Error('cannot find route for path ', path)
+        const route_tree = router.find(path)
+        if(!route_tree) {
+            throw new Error('Cannot find specified route')
         }
+        const { route, params } = route_tree
+        req.params = params
         const controllers = route.controllers[method] || route.controllers['any']
         //console.log({ controllers, path })
         if(!controllers) {
@@ -167,16 +169,21 @@ express.use(function cors(req, res, next) {
     console.log('called cors')
     next()
 })
-express.any('route/logger/log', function(req, res, next) {
+express.get('route/logger/log', function(req, res, next) {
+    console.log('runner2.5 was called')
+    next()
+}, 'get')
+
+express.get('route/logger/log/:l', function(req, res, next) {
     console.log('runner3 was called')
     next()
-}, 'any')
+}, 'get')
 
 
 console.log({
     exp: express()({
-        path:'event/user',
-        method:'post'
+        path:'route/logger/log',
+        method:'get'
     }),
     // expas: express()({
     //     path: 'route/logger/log',

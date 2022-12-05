@@ -86,6 +86,8 @@ class Router {
 
         const path_split = path.split('/')
 
+        const params = {}
+
         //console.log({ path_split })
 
         for(let i = 0; i < path_split.length; i += 1) {
@@ -101,7 +103,8 @@ class Router {
                     parent = p
                     found = true
                     break
-                } else if(/:/.test(p.path) && first_param_occurence > -1){
+                } else if(/:/.test(p.path)){
+                    params[p.path.slice(1)] = cur
                     first_param_occurence = j
                 }
             }
@@ -115,7 +118,8 @@ class Router {
         if(parent.is_start || !parent.methods || Object.keys(parent.methods).length == 0) {
             return null
         }
-        return parent
+        console.log({ params })
+        return { route: parent, params }
     }
 }
 
@@ -128,6 +132,7 @@ test.set('run/test', [function hello() {}, function afcon(){} ], 'patch')
 test.set('run/test', [function learning() {}, function algo(){} ], 'post')
 test.set('run/test/hello', [function Testhello() {}, function Testafcon(){} ], 'head')
 test.set('run/running/runner', [function running() {}, function track(){} ], 'patch')
+test.set('/run/:id/come/:hello', [function(req, res) { console.log('melo') }], 'post')
 const n = new Router()
 n.addToList('run', test)
 
@@ -135,6 +140,10 @@ n.addToList('run', test)
 // console.log({
 //     //routers: d.children[0].children,
 //     finda: test.find('trace/run/test/go').controllers
+// })
+
+// console.log({
+//     connection: test.find('/run/2/come/toyou').route.controllers['post'][0]()
 // })
 
 
