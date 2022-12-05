@@ -43,7 +43,7 @@ class Router {
        }
        if(method) {
            if(Array.isArray(controllers)) {
-              parent.controllers[method] = controllers
+            parent.controllers[method] = controllers
            } else {
                if(parent.controllers[method]) {
                    parent.controllers[method].push(controllers)
@@ -63,7 +63,8 @@ class Router {
         }
         // do we have it in the router
         const addition = {
-            path, children: []
+            path, children: [],
+            controllers: {}, methods: {}
         }
         
         const leader = this.paths[Router.startPoint]
@@ -130,11 +131,11 @@ test.set('run/running/runner', [function running() {}, function track(){} ], 'pa
 const n = new Router()
 n.addToList('run', test)
 
-n.addToList('event', test)
-console.log({
-    //routers: d.children[0].children,
-    finda: test.find('trace/run/test/go').controllers
-})
+// n.addToList('event', test)
+// console.log({
+//     //routers: d.children[0].children,
+//     finda: test.find('trace/run/test/go').controllers
+// })
 
 
 module.exports = Router

@@ -1,15 +1,13 @@
 const Router = require('../router')
 const Itearable = require('./iterator')
 let router = new Router()
-const precon = [function precon(req, res, next) {
-    next()
-}]
+const precon = []
 
 function handler(iterate, req, res) {
     
     function nextCaller() {
         const v = iterate.next()
-        v.value(req, res, nextCaller)
+        typeof v.value == 'function' && v.value(req, res, nextCaller)
     }
     nextCaller()
 }
@@ -23,8 +21,12 @@ function express() {
         if(!route) {
             throw new Error('cannot find route for path ', path)
         }
-
-        const iterate = Itearable(route.controllers[method])
+        const controllers = route.controllers[method] || route.controllers['any']
+        //console.log({ controllers, path })
+        if(!controllers) {
+            throw new Error('No route found for path '+ path)
+        }
+        const iterate = Itearable(controllers)
         
         handler(iterate, req, res)
     }
@@ -40,18 +42,32 @@ function addPrecons() {
             // add precons at the starts of controllers
             const controllers = path.controllers
             for(control in controllers) {
-                for(let p of precon) {
-                    const pname = Object.getOwnPropertyDescriptors(p).name.value
-                    if(!path.preconset[pname]) controllers[control].unshift(p)
+                let new_controllers = []
+                for(let i = 0; i < precon.length; i += 1) {
+                    const pname = Object.getOwnPropertyDescriptors(precon[i]).name.value
+                    
+                    if(!path.preconset[pname]) {
+                        new_controllers.push(precon[i])
+                    }
                     path.preconset[pname] = true
                 }
+                controllers[control].unshift(...new_controllers)
             }
             return
         }
-        if(path.controllers && path.controllers.length > 0) {
-            if(!path.preconset[pname]) controllers[control].unshift(p)
-                path.controllers.unshift(...precon)
-            path.preconset[pname] = true
+        const shouldset = ((Object.keys(path.controllers).length > 0) 
+                            && Object.keys(path.methods).length > 0 
+                            && path.children.length == 0)
+
+        if(path.controllers && path.controllers.length > 0 || shouldset) {
+            const controllers = path.controllers
+            for(control in controllers) {
+                for(let i = precon.length - 1; i >= 0; i -= 1) {
+                    const pname = Object.getOwnPropertyDescriptors(precon[i]).name.value
+                    if(!path.preconset[pname]) controllers[control].unshift(precon[i])
+                    path.preconset[pname] = true
+                }
+            }
         }
 
         for(let j of children) {
@@ -68,11 +84,17 @@ express.use = function() {
     }
     const [ first_args, ...rest ] = arguments
 
-    //console.log({ first_args, rest })
-
     if(typeof first_args == 'function') {
         // add to precontrollers
+        if(rest.length == 0) {
+            precon.push(first_args)
+            return
+        }
         precon.push(first_args, ...rest)
+        // for (let index = rest.length - 1; index >= 0; index -= 1) {
+        //     precon.push(rest[index])
+        // }
+        precon.push(first_args)  
     } else if(typeof first_args == 'string' && rest.length > 0) {
         let is_route = false, is_func = false
         for(let t of rest) {
@@ -86,10 +108,10 @@ express.use = function() {
             } else if(t instanceof Router) {
                 router.addToList(first_args, t)
                 // need to open
-                addPrecons()
                 break
             }
         }
+        addPrecons()
     } else {
         throw new Error('Cannot have a route without route class or functions')
     }
@@ -99,20 +121,65 @@ for(let m in Router.METHODS) {
     express[m.toLowerCase()] = function() {
         const [first_arg, ...rest] = arguments
         router.set(first_arg, rest, m.toLowerCase())
+        addPrecons()
     } 
+}
+
+express.any = function() {
+    const [first_arg, ...rest] = arguments
+    router.set(first_arg, rest, 'any')
+    addPrecons()
 }
 
 const t = new Router().set('logger', function logger(req, res) {
     console.log('i was called')
 }, 'post')
 
-t.set('user', function user(req, res) {}, 'post')
-express.use('route', t)
-express.use('set', t)
+t.set('user', function user(req, res) { console.log('user runner was called ')}, 'post')
+
+express.use('event', t)
+
+//express.use('route', t)
+express.use(function precon(req, res, next) {
+    console.log('hello world')  
+    next()
+}, function precon2(req, res, next) {
+    console.log('hello world how do you')  
+    next()
+})
+//express.use('set', t)
+express.any('route', function(req, res, next) {
+    console.log('runner2 was called')
+    next()
+}, 'any')
+
+express.use(function okay(req, res, next) {
+    console.log('last')
+    next()
+})
+
+express.any('route/logger', function(req, res, next) {
+    console.log('runner2 was called')
+    next()
+}, 'any')
+
+express.use(function cors(req, res, next) {
+    console.log('called cors')
+    next()
+})
+express.any('route/logger/log', function(req, res, next) {
+    console.log('runner3 was called')
+    next()
+}, 'any')
+
 
 console.log({
     exp: express()({
-        path:'route/logger',
+        path:'event/user',
         method:'post'
-    }, {})
+    }),
+    // expas: express()({
+    //     path: 'route/logger/log',
+    //     method:'post'
+    // }, {})
 })
