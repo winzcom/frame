@@ -1,5 +1,6 @@
 const Router = require('../router')
 const Itearable = require('./iterator')
+const { sendHttpError, codes2Messages, cleanFirstSlash } = require('../util/utils')
 let router = new Router()
 const precon = []
 
@@ -15,18 +16,18 @@ function handler(iterate, req, res) {
 
 function express() {
     return function(req, res) {
-        let path = req.path
+        let path = req.url
         let method = req.method.toLowerCase()
-        const route_tree = router.find(path)
+        path = path.slice(1)
+        const route_tree = router.find(path, method)
         if(!route_tree) {
-            throw new Error('Cannot find specified route')
+            return sendHttpError(codes2Messages.NotFound, res)
         }
         const { route, params } = route_tree
         req.params = params
         const controllers = route.controllers[method] || route.controllers['any']
-        //console.log({ controllers, path })
         if(!controllers) {
-            throw new Error('No route found for path '+ path)
+            return sendHttpError(codes2Messages.NotFound, res)
         }
         const iterate = Itearable(controllers)
         
@@ -99,6 +100,7 @@ express.use = function() {
         precon.push(first_args)  
     } else if(typeof first_args == 'string' && rest.length > 0) {
         let is_route = false, is_func = false
+        let clean_path = cleanFirstSlash(first_args)
         for(let t of rest) {
             if(typeof t == 'function') {
                 is_func = true
@@ -106,9 +108,9 @@ express.use = function() {
                     throw new Error('Cannot use route class with functions declaration')
                 }
                 // create a route with funcs
-                router.set(first_args, t)
+                router.set(clean_path, t)
             } else if(t instanceof Router) {
-                router.addToList(first_args, t)
+                router.addToList(clean_path, t)
                 // need to open
                 break
             }
@@ -122,71 +124,17 @@ express.use = function() {
 for(let m in Router.METHODS) {
     express[m.toLowerCase()] = function() {
         const [first_arg, ...rest] = arguments
-        router.set(first_arg, rest, m.toLowerCase())
+        const clean_path = cleanFirstSlash(first_arg)
+        router.set(clean_path, rest, m.toLowerCase())
         addPrecons()
     } 
 }
 
 express.any = function() {
     const [first_arg, ...rest] = arguments
-    router.set(first_arg, rest, 'any')
+    const clean_path = cleanFirstSlash(first_arg)
+    router.set(clean_path, rest, 'any')
     addPrecons()
 }
 
-const t = new Router().set('logger', function logger(req, res) {
-    console.log('i was called')
-}, 'post')
-
-t.set('user', function user(req, res) { console.log('user runner was called ')}, 'post')
-
-express.use('event', t)
-
-//express.use('route', t)
-express.use(function precon(req, res, next) {
-    console.log('hello world')  
-    next()
-}, function precon2(req, res, next) {
-    console.log('hello world how do you')  
-    next()
-})
-//express.use('set', t)
-express.any('route', function(req, res, next) {
-    console.log('runner2 was called')
-    next()
-}, 'any')
-
-express.use(function okay(req, res, next) {
-    console.log('last')
-    next()
-})
-
-express.any('route/logger', function(req, res, next) {
-    console.log('runner2 was called')
-    next()
-}, 'any')
-
-express.use(function cors(req, res, next) {
-    console.log('called cors')
-    next()
-})
-express.get('route/logger/log', function(req, res, next) {
-    console.log('runner2.5 was called')
-    next()
-}, 'get')
-
-express.get('route/logger/log/:l', function(req, res, next) {
-    console.log('runner3 was called')
-    next()
-}, 'get')
-
-
-console.log({
-    exp: express()({
-        path:'route/logger/log',
-        method:'get'
-    }),
-    // expas: express()({
-    //     path: 'route/logger/log',
-    //     method:'post'
-    // }, {})
-})
+module.exports = express

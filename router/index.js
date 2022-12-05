@@ -1,3 +1,4 @@
+const { sendHttpError, codes2Messages, cleanFirstSlash } = require('../util/utils')
 class Router {
     static METHODS = {
         GET: 'GET',
@@ -14,11 +15,20 @@ class Router {
         this.paths = { [Router.startPoint]: { 
             path: null, children: [], is_start: true,
         } }
+
+        for(let m in Router.METHODS) {
+            this[m.toLocaleLowerCase()] = function() {
+                arguments[0] = cleanFirstSlash(arguments[0])
+                this.set(...arguments, m.toLocaleLowerCase())
+            }
+        }
     }
 
-    set(path = '', controllers = [], method) {
+    set(path = '', controllers = [], method = 'get') {
        const path_split = path.split('/')
-
+       if(typeof controllers == 'string' || controllers.length == 0) {
+           throw new Error('No handler set for path '+ path)
+       }
        let parent = this.paths[Router.startPoint], cur
 
 
@@ -77,33 +87,25 @@ class Router {
         return this
     }
 
-    insert(path, router) {
-        
-    }
-
-    find(path) {
+    find(path, method) {
         let parent = this.paths[Router.startPoint]
 
         const path_split = path.split('/')
 
         const params = {}
 
-        //console.log({ path_split })
-
         for(let i = 0; i < path_split.length; i += 1) {
             const cur = path_split[i]
 
-            //console.log({ cur })
             let found = false, first_param_occurence = -1
             
             for(let j = 0; j < parent.children.length; j += 1) {
                 let p = parent.children[j]
                 if(p.path == cur) {
-                    //console.log({ p:p.children })
                     parent = p
                     found = true
                     break
-                } else if(/:/.test(p.path)){
+                } else if(/:/.test(p.path) && (p.methods[method]) || p.children.length > 0){
                     params[p.path.slice(1)] = cur
                     first_param_occurence = j
                 }
@@ -118,33 +120,8 @@ class Router {
         if(parent.is_start || !parent.methods || Object.keys(parent.methods).length == 0) {
             return null
         }
-        console.log({ params })
         return { route: parent, params }
     }
 }
-
-const test = new Router()
-
-test.set('trace/run/test/go', [function world() {}, function cup() {} ], 'post')
-test.set('trace/run/test', [function worldRunner() {}, function cupRunner() {} ], 'post')
-test.set('log/run/test', [function hello() {}, function afcon(){} ], 'post')
-test.set('run/test', [function hello() {}, function afcon(){} ], 'patch')
-test.set('run/test', [function learning() {}, function algo(){} ], 'post')
-test.set('run/test/hello', [function Testhello() {}, function Testafcon(){} ], 'head')
-test.set('run/running/runner', [function running() {}, function track(){} ], 'patch')
-test.set('/run/:id/come/:hello', [function(req, res) { console.log('melo') }], 'post')
-const n = new Router()
-n.addToList('run', test)
-
-// n.addToList('event', test)
-// console.log({
-//     //routers: d.children[0].children,
-//     finda: test.find('trace/run/test/go').controllers
-// })
-
-// console.log({
-//     connection: test.find('/run/2/come/toyou').route.controllers['post'][0]()
-// })
-
 
 module.exports = Router
