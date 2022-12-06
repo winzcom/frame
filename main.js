@@ -7,24 +7,13 @@ const Server = http.createServer(express())
 const t = new Router()
 
 express.use(function params(req, res, next) {
+    req.params.hello = 'world'
     next()
 })
 
-// t.get('user/steve', function user(req, res) {
-//     const json_message = {
-//         message: `Got at all steve ${req.params.b}`
-//     }
-//     const message_2_string = JSON.stringify(json_message)
-
-//     res.writeHead(200, {
-//         'Content-Length': Buffer.byteLength(message_2_string),
-//         'Content-Type': 'application/json'
-//       }).end(message_2_string + '\n')
-// })
-
 t.get(':u', function user(req, res) {
     const json_message = {
-        message: `this is u ${req.params.u}`
+        message: `this is u ${req.params.u} and has hello ${req.params.hello}`
     }
     const message_2_string = JSON.stringify(json_message)
 
@@ -44,6 +33,20 @@ t.get(':u/:s', function user(req, res) {
         'Content-Length': Buffer.byteLength(message_2_string),
         'Content-Type': 'application/json'
       }).end(message_2_string + '\n')
+})
+
+t.post('/hello/world', function(req, res) {
+    const json_message = {
+        message: 'Hello my ' + req.params.hello,
+        status: true
+    }
+
+    const message_2_string = JSON.stringify(json_message)
+
+    res.writeHead(201, {
+        'Content-Length': Buffer.byteLength(message_2_string),
+        'Content-Type': 'application/json'
+    }).end(message_2_string + '\n')
 })
 
 

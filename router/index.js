@@ -26,7 +26,7 @@ class Router {
 
     set(path = '', controllers = [], method = 'get') {
        const path_split = path.split('/')
-       if(typeof controllers == 'string' || controllers.length == 0) {
+       if(typeof controllers == 'string' || (Array.isArray(controllers) && controllers.length == 0)) {
            throw new Error('No handler set for path '+ path)
        }
        let parent = this.paths[Router.startPoint], cur

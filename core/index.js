@@ -8,6 +8,7 @@ function handler(iterate, req, res) {
     
     function nextCaller() {
         const v = iterate.next()
+        //console.log({ ser: req.params, v })
         typeof v.value == 'function' && v.value(req, res, nextCaller)
     }
     nextCaller()
@@ -38,6 +39,7 @@ function express() {
 function addPrecons() {
     const path = router.paths[Router.startPoint]
     const child = path.children[path.children.length - 1]
+    //console.log({ precon })
     function dfs(path) {
         const children = path.children
         if(!path.preconset) path.preconset = {}
@@ -48,7 +50,6 @@ function addPrecons() {
                 let new_controllers = []
                 for(let i = 0; i < precon.length; i += 1) {
                     const pname = Object.getOwnPropertyDescriptors(precon[i]).name.value
-                    
                     if(!path.preconset[pname]) {
                         new_controllers.push(precon[i])
                     }
@@ -60,7 +61,7 @@ function addPrecons() {
         }
         const shouldset = ((Object.keys(path.controllers).length > 0) 
                             && Object.keys(path.methods).length > 0 
-                            && path.children.length == 0)
+                            /*&& path.children.length == 0*/)
 
         if(path.controllers && path.controllers.length > 0 || shouldset) {
             const controllers = path.controllers
@@ -94,10 +95,6 @@ express.use = function() {
             return
         }
         precon.push(first_args, ...rest)
-        // for (let index = rest.length - 1; index >= 0; index -= 1) {
-        //     precon.push(rest[index])
-        // }
-        precon.push(first_args)  
     } else if(typeof first_args == 'string' && rest.length > 0) {
         let is_route = false, is_func = false
         let clean_path = cleanFirstSlash(first_args)
