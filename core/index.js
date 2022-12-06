@@ -1,6 +1,10 @@
+const { createSecureServer } = require('node:http2')
 const Router = require('../router')
 const Itearable = require('./iterator')
-const { sendHttpError, codes2Messages, cleanFirstSlash } = require('../util/utils')
+const { sendHttpError, codes2Messages, 
+    cleanFirstSlash, 
+    extractQuery 
+} = require('../util/utils')
 let router = new Router()
 const precon = []
 
@@ -15,11 +19,11 @@ function handler(iterate, req, res) {
 }
 
 
-function express() {
+function express(server) {
     return function(req, res) {
-        let path = req.url
+        let path  = extractQuery(req)
         let method = req.method.toLowerCase()
-        path = path.slice(1)
+        path = cleanFirstSlash(path)
         const route_tree = router.find(path, method)
         if(!route_tree) {
             return sendHttpError(codes2Messages.NotFound, res)
