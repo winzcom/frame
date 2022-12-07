@@ -149,7 +149,6 @@ for(let m in Router.METHODS) {
         const [first_arg, ...rest] = arguments
         const clean_path = cleanFirstSlash(first_arg)
         for(let j = 0; j < rest.length; j += 1) {
-            console.log({ afaf: rest[j] })
             rest[j] = rest[j].bind(express)
         }
         router.set(clean_path, rest, m.toLowerCase())

@@ -1,6 +1,6 @@
 const http = require('http')
-const express = require('./core')
-const Router = require('./router')
+const express = require('../core')
+const Router = require('../router')
 const Server = http.createServer(express())
 
 
@@ -19,23 +19,17 @@ t.any(/\/users\/(.*)\/allow/, function (req, res) {
 })
 
 express.use(function(req, res, next) {
+    this.decorate({
+        hello_message: 'welcome to my express'
+    }, 'helper_tool')
     next()
 })
-
-express.decorate(function helloWorld() {
-    console.log('hello world my people')
-}, 'hello_world')
-
-express.decorate({
-    db: 'some.db',
-    port: 3000
-}, 'conf')
 
 express.get('/params/:b/okay/:c', function(req, res, next) {
     res.writeHead(200, {
         'content-type': 'application/json'
     }).end(JSON.stringify({
-        message: 'Hello world '+ req.params.b + ' and '+ req.params.c + ' getting the decorated function here '+this.hello_world()
+        message: `Binding ${this.helper_tool.hello_message}`
     }))
 })
 
@@ -47,8 +41,6 @@ express.any('/hello/world', function(req, res) {
 t.get('/commits/steve', function(req, res) {
     return res.end('SHOW')
 })
-
-console.log('match ', /\/users\/.*/.test('/users/match'))
 
 express.use('/event', t)
 
