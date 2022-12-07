@@ -8,6 +8,8 @@ const { sendHttpError, codes2Messages,
 let router = new Router()
 const precon = []
 
+router.precon = precon
+
 function handler(iterate, req, res) {
     
     function nextCaller() {
@@ -17,6 +19,25 @@ function handler(iterate, req, res) {
     }
     nextCaller()
 }
+
+function extend(funcs, name) { 
+    if(typeof funcs == 'function') {
+        express = Object.assign(express, {
+            [name]: funcs
+        })
+    } else if(typeof funcs == 'object') {
+        Object.defineProperty(express, name, {
+            configurable: true, value: {}
+        })
+        const names = Object.getOwnPropertyNames(funcs)
+
+        for(let n of names) {
+            const desc = Object.getOwnPropertyDescriptor(funcs, n)
+            Object.defineProperty(express[name], n, desc)
+        }
+    }
+}
+
 
 
 function express(server) {
@@ -86,6 +107,8 @@ function addPrecons() {
     dfs(child)
 }
 
+express.decorate = extend
+
 express.use = function() {
     if(arguments.length == 0) {
         throw new Error('Cannot call use without a parameter')
@@ -95,7 +118,7 @@ express.use = function() {
     if(typeof first_args == 'function') {
         // add to precontrollers
         if(rest.length == 0) {
-            precon.push(first_args)
+            precon.push(first_args.bind(express))
             return
         }
         precon.push(first_args, ...rest)
@@ -109,9 +132,9 @@ express.use = function() {
                     throw new Error('Cannot use route class with functions declaration')
                 }
                 // create a route with funcs
-                router.set(clean_path, t)
+                router.set(clean_path, t.bind(express))
             } else if(t instanceof Router) {
-                router.addToList(clean_path, t)
+                router.addToList(clean_path, t, express)
                 // need to open
                 break
             }
@@ -126,6 +149,10 @@ for(let m in Router.METHODS) {
     express[m.toLowerCase()] = function() {
         const [first_arg, ...rest] = arguments
         const clean_path = cleanFirstSlash(first_arg)
+        for(let j = 0; j < rest.length; j += 1) {
+            console.log({ afaf: rest[j] })
+            rest[j] = rest[j].bind(express)
+        }
         router.set(clean_path, rest, m.toLowerCase())
         addPrecons()
     } 

@@ -12,7 +12,7 @@ class Router {
     }
     static startPoint = '0~0'
 
-    constructor() {
+    constructor(context) {
         this.paths = { [Router.startPoint]: { 
             path: null, children: [], is_start: true,
             child_indexes: []
@@ -26,7 +26,7 @@ class Router {
         }
     }
 
-    set(path, controllers = [], method = 'get') {
+    set(path, controllers = [], method = 'get', context = null) {
        // path could be an instance of RegExp
        let is_reg_exp = false
 
@@ -81,7 +81,7 @@ class Router {
        return this
     }
 
-    addToList(path, router) {
+    addToList(path, router, context) {
         let route = this.find(path)
         if(route) {
             return route
@@ -98,6 +98,18 @@ class Router {
         const starter = router.paths[Router.startPoint].children
 
         for(let j of starter) {
+            /**
+             * add express as context for all router
+             */
+            if(context) {
+                for(let m in j.controllers) {
+                    const start_point = this.precon ? this.precon.length : 0
+                    for(let k = start_point - 1; k < j.controllers[m].length; k += 1){
+                        j.controllers[m][k] = j.controllers[m][k].bind(context)
+                    }
+                }
+            }
+            // end of express as context
             const child_index = leader.children[index - 1].children.push(j)
             if(j.path instanceof RegExp) {
                 leader.children[index - 1].child_indexes.push(child_index - 1)   
@@ -152,11 +164,15 @@ class Router {
                 }
                 parent = parent.children[first_param_occurence]
             } else if(parent.child_indexes && parent.child_indexes.length > 0) {
-                const child = parent.children[parent.child_indexes[0]]
-                const newReg = new RegExp(child.path)
-                let new_path = (path_split.slice(i + 1).join('/'))
-                if((newReg.test('/' + new_path) || newReg.test(new_path)) && (child.methods[method] || child.methods['any'])) {
-                    return { route: child, params: {} }
+                let child = parent.children[parent.child_indexes[0]]
+                //look for a match
+                for(let k of parent.child_indexes) {
+                    child = parent.children[k]
+                    const newReg = new RegExp(child.path)
+                    let new_path = (path_split.slice(i + 1).join('/'))
+                    if((newReg.test('/' + new_path) || newReg.test(new_path)) && (child.methods[method] || child.methods['any'])) {
+                        return { route: child, params: {} }
+                    }
                 }
                 continue
             }
