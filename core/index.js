@@ -1,4 +1,3 @@
-const { createSecureServer } = require('node:http2')
 const Router = require('../router')
 const Itearable = require('./iterator')
 const { sendHttpError, codes2Messages, 
