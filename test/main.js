@@ -10,8 +10,11 @@ const t = new Router()
 
 
 
-t.patch(/^\/commits\/(\w+)(?:\.\.(\w+))?$/, function(req, res) {
-    return res.end('OK')
+t.any(/^\/commits\/(\w+)(?:\.\.(\w+))?$/, function(req, res) {
+    return res.json({
+        message: 'parsed body',
+        body: req.body
+    })
 })
 
 t.any(/\/users\/(.*)\/allow/, function (req, res) {
@@ -25,12 +28,15 @@ express.use(function(req, res, next) {
     next()
 })
 
+express.use(express.parser)
+
 express.get('/params/:b/okay/:c', function(req, res, next) {
-    res.writeHead(200, {
-        'content-type': 'application/json'
-    }).end(JSON.stringify({
+    res.json({
         message: `Binding ${this.helper_tool.hello_message}`
-    }))
+    }, 400)
+    next()
+}, function after(req, res, next) {
+    console.log('after was called')
 })
 
 

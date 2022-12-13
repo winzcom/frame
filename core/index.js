@@ -4,18 +4,25 @@ const { sendHttpError, codes2Messages,
     cleanFirstSlash, 
     extractQuery 
 } = require('../util/utils')
+const parser = require('../lib/parser')
+const extensible = require('./extensible')
 let router = new Router()
 const precon = []
 
 router.precon = precon
 
 function handler(iterate, req, res) {
+
+    //extend res
+
+    res = Object.assign(res, extensible.request)
     
     function nextCaller() {
         const v = iterate.next()
         //console.log({ ser: req.params, v })
         typeof v.value == 'function' && v.value(req, res, nextCaller)
     }
+    //parser(req, res, nextCaller)
     nextCaller()
 }
 
@@ -36,8 +43,6 @@ function extend(funcs, name) {
         }
     }
 }
-
-
 
 function express(server) {
     return function(req, res) {
@@ -107,6 +112,8 @@ function addPrecons() {
 }
 
 express.decorate = extend
+
+express.parser = parser
 
 express.use = function() {
     if(arguments.length == 0) {
