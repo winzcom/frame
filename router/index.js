@@ -146,13 +146,14 @@ class Router {
                     parent = p
                     found = true
                     break
-                } else if(/:/.test(p.path)) {
+                } else if(/:/.test(p.path) && !(p.path instanceof RegExp)) {
                     let found_with_method = p.methods[method]
                     const child_length = p.children.length > 0
                     if(!found_with_method) {
                         found_with_method = p.methods['any']
                     }
                     if(found_with_method || child_length) {
+                        console.log({ s: p.path })
                         params[p.path.slice(1)] = cur
                         first_param_occurence = j
                     }
